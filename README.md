@@ -32,6 +32,7 @@ create table if not exists public.tasks (
   completed_by text check (completed_by is null or char_length(completed_by) between 1 and 40),
   completed_at timestamptz,
   day_of_week text check (day_of_week is null or day_of_week in ('Mon','Tue','Wed','Thu','Fri','Sat','Sun')),
+  days_of_week text[] not null default '{}' check (days_of_week <@ array['Mon','Tue','Wed','Thu','Fri','Sat','Sun']),
   scheduled_week_start date not null default date_trunc('week', now())::date
 );
 
@@ -95,6 +96,22 @@ end $$;
 
 If realtime doesn't turn on via SQL, enable it in the UI: **Database → Replication → `supabase_realtime` → toggle `tasks` and `lab_members` on**.
 
+### Migrating an existing install (adding multi-day support)
+
+If your `tasks` table was created before the `days_of_week` array column existed, run this in the SQL Editor to add it and copy over any existing single-day tags:
+
+```sql
+alter table public.tasks
+  add column if not exists days_of_week text[] not null default '{}'
+  check (days_of_week <@ array['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+
+update public.tasks
+  set days_of_week = array[day_of_week]
+  where day_of_week is not null and cardinality(days_of_week) = 0;
+```
+
+The old `day_of_week` column is still read as a fallback but is no longer written to; you can leave it in place indefinitely or drop it later once you're confident everything is migrated.
+
 ### 3. Wire up the keys
 
 Open `index.html`. Near the top of the `<script>` block you'll find:
@@ -124,7 +141,7 @@ If you're rotating the anon key because it leaked or someone's abusing it:
 
 ## How to use (send this to your labmates)
 
-Go to **https://jbrisbois2.github.io/lab-tasks/**. First time you visit, pick your name from the shared list — or click **"+ Add new person…"** if you're not on it yet. Your choice is saved in your browser so you only do this once (there's a "change" link next to your name if you need to switch). Type a task in the box at the top, choose which week it's for (defaults to this week; you can pick up to 6 weeks ahead), and hit **Add**. Each task has two pills you can click anytime to change: a **week** pill (move it to a different week) and a **day** pill (tag it with Mon–Sun within that week). Anyone can change either at any time. Check the box to mark a task done, uncheck to bring it back. If someone made a typo or added something by mistake, click the small **×** on the task to delete it (there's a confirmation prompt). Tasks are grouped under headers like "This week", "Next week", "Last week (overdue)", etc., with this week highlighted. The page updates live as others make changes — no refresh needed. Checked-off tasks move to the **Completed** section at the bottom (click to expand) as a record of what got done.
+Go to **https://jbrisbois2.github.io/lab-tasks/**. First time you visit, pick your name from the shared list — or click **"+ Add new person…"** if you're not on it yet. Your choice is saved in your browser so you only do this once (there's a "change" link next to your name if you need to switch). Type a task in the box at the top, choose which week it's for (defaults to this week; you can pick up to 6 weeks ahead), and hit **Add**. Each task has two pills you can click anytime to change: a **week** pill (move it to a different week) and a **days** pill (tag it with any combination of Mon–Sun within that week, or "all week"). The days pill opens a small dialog where you can check one or more days. Anyone can change either at any time. Check the box to mark a task done, uncheck to bring it back. If someone made a typo or added something by mistake, click the small **×** on the task to delete it (there's a confirmation prompt). Tasks are grouped under headers like "This week", "Next week", "Last week (overdue)", etc., with this week highlighted. The page updates live as others make changes — no refresh needed. Checked-off tasks move to the **Completed** section at the bottom (click to expand) as a record of what got done.
 
 ---
 

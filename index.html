@@ -209,6 +209,44 @@
     display: inline-block;
   }
   span.tag.static:hover { border-color: var(--accent); color: var(--accent); }
+  button.tag.pill-btn {
+    padding-right: 8px;
+    background-image: none;
+    text-align: left;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  #days-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  #days-checkboxes label,
+  .all-week-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    background: #fff;
+  }
+  #days-checkboxes label:hover,
+  .all-week-row:hover { border-color: var(--accent); }
+  #days-checkboxes input[type=checkbox],
+  .all-week-row input[type=checkbox] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .all-week-row { margin-bottom: 12px; }
 
   .delete-btn {
     background: none;
@@ -387,6 +425,25 @@
     <div class="dialog-actions">
       <button type="button" id="name-cancel">Cancel / 取消</button>
       <button type="submit" id="name-confirm" class="primary">Continue / 继续</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="days-dialog">
+  <form id="days-form">
+    <div class="dialog-body">
+      <h2>Days of week / 选择星期</h2>
+      <p class="help">Pick one or more days, or choose "all week". / 选择一天或多天，或选择"全周"。</p>
+      <label class="all-week-row">
+        <input type="checkbox" id="days-all-week">
+        <span>All week / 全周</span>
+      </label>
+      <div id="days-checkboxes"></div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" id="days-clear">Clear / 清除</button>
+      <button type="button" id="days-cancel">Cancel / 取消</button>
+      <button type="submit" id="days-save" class="primary">Save / 保存</button>
     </div>
   </form>
 </dialog>
@@ -665,14 +722,26 @@
     return base.replace(dayKey, `${dayKey} ${fmtMD(d)}`);
   }
 
-  function taskDayPickerHtml(t) {
-    const cls = t.day_of_week ? 'tag set' : 'tag';
-    const opts = ['', ...DAYS].map(d => {
-      const selected = (t.day_of_week || '') === d ? ' selected' : '';
-      const label = dayOptionLabel(d, t.scheduled_week_start);
-      return `<option value="${d}"${selected}>${esc(label)}</option>`;
-    }).join('');
-    return `<select class="${cls}" data-day-tag aria-label="Day of week / 星期">${opts}</select>`;
+  const DAY_ZH = { Mon:'周一', Tue:'周二', Wed:'周三', Thu:'周四', Fri:'周五', Sat:'周六', Sun:'周日' };
+  function taskDays(t) {
+    if (Array.isArray(t.days_of_week) && t.days_of_week.length > 0) return t.days_of_week;
+    return t.day_of_week ? [t.day_of_week] : [];
+  }
+  function daysLabel(days, weekStartKey) {
+    if (!days || days.length === 0) return 'no day / 未指定';
+    if (days.length === 7) return 'all week / 全周';
+    const sorted = [...days].sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b]);
+    if (sorted.length === 1) return dayOptionLabel(sorted[0], weekStartKey);
+    const en = sorted.join(', ');
+    const zh = sorted.map(d => DAY_ZH[d]).join('、');
+    return `${en} / ${zh}`;
+  }
+
+  function taskDaysPickerHtml(t) {
+    const days = taskDays(t);
+    const cls = days.length > 0 ? 'tag set pill-btn' : 'tag pill-btn';
+    const label = daysLabel(days, t.scheduled_week_start);
+    return `<button type="button" class="${cls}" data-days-btn aria-label="Days of week / 选择星期">${esc(label)}</button>`;
   }
 
   function openTaskHtml(t) {
@@ -684,7 +753,7 @@
             <span class="title">${esc(t.title)}</span>
             <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task / 删除任务" title="Delete task / 删除任务">×</button>
           </div>
-          <div class="pills">${taskWeekPickerHtml(t)}${taskDayPickerHtml(t)}</div>
+          <div class="pills">${taskWeekPickerHtml(t)}${taskDaysPickerHtml(t)}</div>
           <div class="meta">added by / 添加人 ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
         </div>
       </div>`;
@@ -697,13 +766,14 @@
     const label = `${weekTitle(off)} · ${fmtWeekRange(d)}`;
     return `<span class="tag set static">${esc(label)}</span>`;
   }
-  function taskDayTagStatic(t) {
-    if (!t.day_of_week) return '';
-    return `<span class="tag set static">${esc(dayOptionLabel(t.day_of_week, t.scheduled_week_start))}</span>`;
+  function taskDaysTagStatic(t) {
+    const days = taskDays(t);
+    if (days.length === 0) return '';
+    return `<span class="tag set static">${esc(daysLabel(days, t.scheduled_week_start))}</span>`;
   }
 
   function doneTaskHtml(t) {
-    const pills = `${taskWeekTagStatic(t)}${taskDayTagStatic(t)}`;
+    const pills = `${taskWeekTagStatic(t)}${taskDaysTagStatic(t)}`;
     return `
       <div class="task done" data-id="${esc(t.id)}">
         <input type="checkbox" data-action="uncomplete" checked aria-label="Un-complete task / 撤销完成">
@@ -735,11 +805,13 @@
       groups.get(key).tasks.push(t);
     }
 
-    // Sort tasks within each group: day Mon-Sun, unset last, then created_at desc
+    // Sort tasks within each group: earliest tagged day first (Mon-Sun), unset last, then created_at desc
     for (const g of groups.values()) {
       g.tasks.sort((a, b) => {
-        const da = a.day_of_week ? DAY_ORDER[a.day_of_week] : 8;
-        const db = b.day_of_week ? DAY_ORDER[b.day_of_week] : 8;
+        const daysA = taskDays(a);
+        const daysB = taskDays(b);
+        const da = daysA.length ? Math.min(...daysA.map(d => DAY_ORDER[d])) : 8;
+        const db = daysB.length ? Math.min(...daysB.map(d => DAY_ORDER[d])) : 8;
         if (da !== db) return da - db;
         return new Date(b.created_at) - new Date(a.created_at);
       });
@@ -831,23 +903,6 @@
       return;
     }
 
-    // Day picker
-    if (target.matches('[data-day-tag]')) {
-      const value = target.value || null;
-      target.disabled = true;
-      try {
-        const { data, error } = await client.from('tasks')
-          .update({ day_of_week: value }).eq('id', id).select().single();
-        if (error) throw error;
-        tasks.set(data.id, data);
-        render();
-      } catch (err) {
-        window.alert('Could not update day / 无法更新星期: ' + (err.message || err));
-        target.disabled = false;
-      }
-      return;
-    }
-
     // Checkbox complete/uncomplete
     if (target instanceof HTMLInputElement && target.type === 'checkbox') {
       const cb = target;
@@ -869,6 +924,79 @@
         cb.disabled = false;
       }
     }
+  });
+
+  // --- Days-of-week dialog ---
+  const daysDialog = document.getElementById('days-dialog');
+  const daysCheckboxes = document.getElementById('days-checkboxes');
+  const daysAllWeek = document.getElementById('days-all-week');
+  const daysClear = document.getElementById('days-clear');
+  const daysCancel = document.getElementById('days-cancel');
+  const daysSave = document.getElementById('days-save');
+  const daysForm = document.getElementById('days-form');
+  let daysEditingId = null;
+
+  function buildDaysCheckboxes(weekStartKey) {
+    daysCheckboxes.innerHTML = DAYS.map(d => {
+      const label = dayOptionLabel(d, weekStartKey);
+      return `<label><input type="checkbox" name="day" value="${d}"><span>${esc(label)}</span></label>`;
+    }).join('');
+  }
+  function openDaysDialog(taskId) {
+    const t = tasks.get(taskId);
+    if (!t) return;
+    daysEditingId = taskId;
+    buildDaysCheckboxes(t.scheduled_week_start);
+    const current = new Set(taskDays(t));
+    daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.checked = current.has(cb.value);
+    });
+    daysAllWeek.checked = current.size === 7;
+    daysDialog.showModal();
+  }
+  daysAllWeek.addEventListener('change', () => {
+    const check = daysAllWeek.checked;
+    daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = check; });
+  });
+  daysCheckboxes.addEventListener('change', () => {
+    const boxes = daysCheckboxes.querySelectorAll('input[type=checkbox]');
+    daysAllWeek.checked = Array.from(boxes).every(cb => cb.checked);
+  });
+  daysClear.addEventListener('click', () => {
+    daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; });
+    daysAllWeek.checked = false;
+  });
+  daysCancel.addEventListener('click', () => { daysDialog.close(); daysEditingId = null; });
+  daysForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!daysEditingId) return;
+    const selected = Array.from(daysCheckboxes.querySelectorAll('input[type=checkbox]:checked'))
+      .map(cb => cb.value)
+      .sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b]);
+    const id = daysEditingId;
+    daysSave.disabled = true;
+    try {
+      const { data, error } = await client.from('tasks')
+        .update({ days_of_week: selected }).eq('id', id).select().single();
+      if (error) throw error;
+      tasks.set(data.id, data);
+      render();
+      daysDialog.close();
+      daysEditingId = null;
+    } catch (err) {
+      window.alert('Could not update days / 无法更新星期: ' + (err.message || err));
+    } finally {
+      daysSave.disabled = false;
+    }
+  });
+
+  // Open days dialog when the days pill is clicked
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-days-btn]');
+    if (!btn) return;
+    const taskEl = btn.closest('.task');
+    if (!taskEl) return;
+    openDaysDialog(taskEl.dataset.id);
   });
 
   // Delete via click on × button
