@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lab Tasks</title>
+<title>Lab Tasks / 实验室任务</title>
 <style>
   :root {
     --bg: #fafaf7;
@@ -128,7 +128,7 @@
   .week-header.current { color: var(--accent); }
   .week-header.overdue { color: var(--warn); }
   .week-header.overdue::after {
-    content: "overdue";
+    content: "overdue / 逾期";
     font-size: 10px;
     background: var(--warn);
     color: #fff;
@@ -348,45 +348,45 @@
 <body>
 <div class="app">
   <header>
-    <h1>Lab Tasks</h1>
+    <h1>Lab Tasks / 实验室任务</h1>
     <div class="who">
-      Signed in as <strong id="who-name">…</strong>
-      <button id="change-name" type="button">change</button>
+      Signed in as / 登录用户 <strong id="who-name">…</strong>
+      <button id="change-name" type="button">change / 更改</button>
     </div>
   </header>
 
   <form class="add" id="add-form">
-    <input id="add-input" type="text" placeholder="Add a task…" maxlength="500" autocomplete="off" required>
-    <select id="add-week" class="week-select" aria-label="Which week"></select>
-    <button type="submit" id="add-btn">Add</button>
+    <input id="add-input" type="text" placeholder="Add a task… / 添加任务…" maxlength="500" autocomplete="off" required>
+    <select id="add-week" class="week-select" aria-label="Which week / 选择周"></select>
+    <button type="submit" id="add-btn">Add / 添加</button>
   </form>
 
   <div id="open-list"></div>
-  <div class="empty" id="open-empty" hidden>No open tasks. Add one above.</div>
+  <div class="empty" id="open-empty" hidden>No open tasks. Add one above. / 暂无待办任务，请在上方添加。</div>
 
   <details class="completed-section" id="completed-section">
-    <summary>Completed (<span id="completed-count">0</span>)</summary>
+    <summary>Completed / 已完成 (<span id="completed-count">0</span>)</summary>
     <div id="completed-list" class="list"></div>
   </details>
 
-  <div class="status" id="status"><span class="dot"></span><span id="status-text">Connecting…</span></div>
+  <div class="status" id="status"><span class="dot"></span><span id="status-text">Connecting… / 连接中…</span></div>
 </div>
 
 <dialog class="modal" id="name-dialog">
   <form id="name-form">
     <div class="dialog-body">
-      <h2>Who are you?</h2>
-      <p class="help">Pick your name from the list, or add yourself if you're new.</p>
-      <label for="name-select">Your name</label>
+      <h2>Who are you? / 您是谁？</h2>
+      <p class="help">Pick your name from the list, or add yourself if you're new. / 从列表中选择您的姓名，新成员请添加自己。</p>
+      <label for="name-select">Your name / 您的姓名</label>
       <select id="name-select" required></select>
       <div id="new-name-row" hidden>
-        <label for="new-name-input">Add new person</label>
-        <input id="new-name-input" type="text" placeholder="First name (or Firstname Lastname)" maxlength="40" autocomplete="off">
+        <label for="new-name-input">Add new person / 添加新成员</label>
+        <input id="new-name-input" type="text" placeholder="First name (or Firstname Lastname) / 名字（或 名 姓）" maxlength="40" autocomplete="off">
       </div>
     </div>
     <div class="dialog-actions">
-      <button type="button" id="name-cancel">Cancel</button>
-      <button type="submit" id="name-confirm" class="primary">Continue</button>
+      <button type="button" id="name-cancel">Cancel / 取消</button>
+      <button type="submit" id="name-confirm" class="primary">Continue / 继续</button>
     </div>
   </form>
 </dialog>
@@ -401,6 +401,10 @@
 
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const DAY_ORDER = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:7 };
+  const DAY_LABELS = {
+    Mon: 'Mon / 周一', Tue: 'Tue / 周二', Wed: 'Wed / 周三',
+    Thu: 'Thu / 周四', Fri: 'Fri / 周五', Sat: 'Sat / 周六', Sun: 'Sun / 周日'
+  };
   const FUTURE_WEEKS_IN_PICKER = 6;
 
   // --- Utility ---
@@ -451,17 +455,17 @@
     return `${monday.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, opts)}`;
   }
   function weekTitle(offset) {
-    if (offset === 0) return 'This week';
-    if (offset === 1) return 'Next week';
-    if (offset === -1) return 'Last week';
-    if (offset > 1) return `In ${offset} weeks`;
-    return `${-offset} weeks ago`;
+    if (offset === 0) return 'This week / 本周';
+    if (offset === 1) return 'Next week / 下周';
+    if (offset === -1) return 'Last week / 上周';
+    if (offset > 1) return `In ${offset} weeks / ${offset} 周后`;
+    return `${-offset} weeks ago / ${-offset} 周前`;
   }
 
   // --- Identity ---
   const NAME_KEY = 'lab-tasks:name';
   let currentName = (localStorage.getItem(NAME_KEY) || '').trim();
-  document.getElementById('who-name').textContent = currentName || '(not set)';
+  document.getElementById('who-name').textContent = currentName || '(not set / 未设置)';
 
   const nameDialog = document.getElementById('name-dialog');
   const nameSelect = document.getElementById('name-select');
@@ -475,13 +479,13 @@
   const members = new Map(); // id -> {id, name}
 
   function populateNameSelect(preselect) {
-    const opts = ['<option value="" disabled' + (preselect ? '' : ' selected') + '>— select your name —</option>'];
+    const opts = ['<option value="" disabled' + (preselect ? '' : ' selected') + '>— select your name / 选择您的姓名 —</option>'];
     const sorted = Array.from(members.values()).sort((a, b) => a.name.localeCompare(b.name));
     for (const m of sorted) {
       const selected = preselect && preselect.toLowerCase() === m.name.toLowerCase() ? ' selected' : '';
       opts.push(`<option value="${esc(m.name)}"${selected}>${esc(m.name)}</option>`);
     }
-    opts.push('<option value="__new__">+ Add new person…</option>');
+    opts.push('<option value="__new__">+ Add new person… / 添加新成员…</option>');
     nameSelect.innerHTML = opts.join('');
   }
 
@@ -530,7 +534,7 @@
     if (chosen === '__new__') {
       const newName = newNameInput.value.trim();
       if (newName.length < 1 || newName.length > 40) {
-        window.alert('Please enter a name (1–40 characters).');
+        window.alert('Please enter a name (1–40 characters). / 请输入姓名（1–40 个字符）。');
         newNameInput.focus();
         return;
       }
@@ -552,7 +556,7 @@
               .find(m => m.name.toLowerCase() === newName.toLowerCase());
             chosen = race ? race.name : newName;
           } else {
-            window.alert('Could not add name: ' + error.message);
+            window.alert('Could not add name / 无法添加姓名: ' + error.message);
             return;
           }
         } else {
@@ -645,30 +649,43 @@
     }).join('');
     // Non-current week is highlighted
     const cls = (curKey && curKey !== ymd(cur)) ? 'tag set' : 'tag';
-    return `<select class="${cls}" data-week-tag aria-label="Which week">${html}</select>`;
+    return `<select class="${cls}" data-week-tag aria-label="Which week / 选择周">${html}</select>`;
+  }
+
+  function fmtMD(date) {
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+  function dayOptionLabel(dayKey, weekStartKey) {
+    if (!dayKey) return 'no day / 未指定';
+    const base = DAY_LABELS[dayKey] || dayKey;
+    if (!weekStartKey) return base;
+    const monday = fromYmd(weekStartKey);
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + (DAY_ORDER[dayKey] - 1));
+    return base.replace(dayKey, `${dayKey} ${fmtMD(d)}`);
   }
 
   function taskDayPickerHtml(t) {
     const cls = t.day_of_week ? 'tag set' : 'tag';
     const opts = ['', ...DAYS].map(d => {
       const selected = (t.day_of_week || '') === d ? ' selected' : '';
-      const label = d || 'no day';
-      return `<option value="${d}"${selected}>${label}</option>`;
+      const label = dayOptionLabel(d, t.scheduled_week_start);
+      return `<option value="${d}"${selected}>${esc(label)}</option>`;
     }).join('');
-    return `<select class="${cls}" data-day-tag aria-label="Day of week">${opts}</select>`;
+    return `<select class="${cls}" data-day-tag aria-label="Day of week / 星期">${opts}</select>`;
   }
 
   function openTaskHtml(t) {
     return `
       <div class="task" data-id="${esc(t.id)}">
-        <input type="checkbox" data-action="complete" aria-label="Complete task">
+        <input type="checkbox" data-action="complete" aria-label="Complete task / 完成任务">
         <div class="body">
           <div class="title-row">
             <span class="title">${esc(t.title)}</span>
-            <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task" title="Delete task">×</button>
+            <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task / 删除任务" title="Delete task / 删除任务">×</button>
           </div>
           <div class="pills">${taskWeekPickerHtml(t)}${taskDayPickerHtml(t)}</div>
-          <div class="meta">added by ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
+          <div class="meta">added by / 添加人 ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
         </div>
       </div>`;
   }
@@ -682,22 +699,22 @@
   }
   function taskDayTagStatic(t) {
     if (!t.day_of_week) return '';
-    return `<span class="tag set static">${esc(t.day_of_week)}</span>`;
+    return `<span class="tag set static">${esc(dayOptionLabel(t.day_of_week, t.scheduled_week_start))}</span>`;
   }
 
   function doneTaskHtml(t) {
     const pills = `${taskWeekTagStatic(t)}${taskDayTagStatic(t)}`;
     return `
       <div class="task done" data-id="${esc(t.id)}">
-        <input type="checkbox" data-action="uncomplete" checked aria-label="Un-complete task">
+        <input type="checkbox" data-action="uncomplete" checked aria-label="Un-complete task / 撤销完成">
         <div class="body">
           <div class="title-row">
             <span class="title">${esc(t.title)}</span>
-            <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task" title="Delete task">×</button>
+            <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task / 删除任务" title="Delete task / 删除任务">×</button>
           </div>
           ${pills ? `<div class="pills">${pills}</div>` : ''}
-          <div class="meta">added by ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
-          <div class="meta">completed by ${esc(t.completed_by)} · ${esc(fmtDate(t.completed_at))}</div>
+          <div class="meta">added by / 添加人 ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
+          <div class="meta">completed by / 完成人 ${esc(t.completed_by)} · ${esc(fmtDate(t.completed_at))}</div>
         </div>
       </div>`;
   }
@@ -784,7 +801,7 @@
       render();
       input.focus();
     } catch (err) {
-      window.alert('Could not add task: ' + (err.message || err));
+      window.alert('Could not add task / 无法添加任务: ' + (err.message || err));
     } finally {
       btn.disabled = false;
     }
@@ -808,7 +825,7 @@
         tasks.set(data.id, data);
         render();
       } catch (err) {
-        window.alert('Could not move task: ' + (err.message || err));
+        window.alert('Could not move task / 无法移动任务: ' + (err.message || err));
         target.disabled = false;
       }
       return;
@@ -825,7 +842,7 @@
         tasks.set(data.id, data);
         render();
       } catch (err) {
-        window.alert('Could not update day: ' + (err.message || err));
+        window.alert('Could not update day / 无法更新星期: ' + (err.message || err));
         target.disabled = false;
       }
       return;
@@ -847,7 +864,7 @@
         tasks.set(data.id, data);
         render();
       } catch (err) {
-        window.alert('Could not update task: ' + (err.message || err));
+        window.alert('Could not update task / 无法更新任务: ' + (err.message || err));
         cb.checked = !cb.checked;
         cb.disabled = false;
       }
@@ -862,7 +879,7 @@
     if (!taskEl) return;
     const id = taskEl.dataset.id;
     const title = (taskEl.querySelector('.title') || {}).textContent || '(task)';
-    if (!window.confirm(`Delete this task?\n\n"${title}"`)) return;
+    if (!window.confirm(`Delete this task? / 删除此任务？\n\n"${title}"`)) return;
     btn.disabled = true;
     try {
       const { error } = await client.from('tasks').delete().eq('id', id);
@@ -870,7 +887,7 @@
       tasks.delete(id);
       render();
     } catch (err) {
-      window.alert('Could not delete task: ' + (err.message || err));
+      window.alert('Could not delete task / 无法删除任务: ' + (err.message || err));
       btn.disabled = false;
     }
   });
@@ -882,7 +899,7 @@
       client.from('lab_members').select('*').order('name'),
     ]);
     if (tasksRes.error) {
-      setStatus('error', 'Load error: ' + tasksRes.error.message);
+      setStatus('error', 'Load error / 加载错误: ' + tasksRes.error.message);
       return;
     }
     tasks.clear();
@@ -904,11 +921,11 @@
         render();
       })
     .subscribe((status) => {
-      if (status === 'SUBSCRIBED') setStatus('live', 'Live');
+      if (status === 'SUBSCRIBED') setStatus('live', 'Live / 在线');
       else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        setStatus('error', 'Reconnecting… (polling as fallback)');
+        setStatus('error', 'Reconnecting… / 重新连接中…（使用轮询）');
       } else {
-        setStatus('', 'Connecting…');
+        setStatus('', 'Connecting… / 连接中…');
       }
     });
 
