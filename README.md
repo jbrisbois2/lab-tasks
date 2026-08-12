@@ -4,7 +4,7 @@ A dead-simple shared weekly task list for the lab. One list, everyone sees it, e
 
 **Live site:** https://jbrisbois2.github.io/lab-tasks/
 
-No accounts, no passwords. You type your name once (saved in your browser), and it goes on every task you add or check off.
+No accounts, no passwords. You pick your name from a shared list (or add yourself if you're new). That name gets stamped on every task you add or check off.
 
 ---
 
@@ -21,7 +21,9 @@ Sign up at [supabase.com](https://supabase.com) (free tier is fine) and create a
 Open **SQL Editor** in the Supabase dashboard, paste the following, and click **Run**:
 
 ```sql
--- Table
+-- ============================================================
+-- Table: tasks
+-- ============================================================
 create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
   title text not null check (char_length(title) between 1 and 500),
@@ -29,47 +31,69 @@ create table if not exists public.tasks (
   created_at timestamptz not null default now(),
   completed_by text check (completed_by is null or char_length(completed_by) between 1 and 40),
   completed_at timestamptz,
-  day_of_week text check (day_of_week is null or day_of_week in ('Mon','Tue','Wed','Thu','Fri','Sat','Sun'))
+  day_of_week text check (day_of_week is null or day_of_week in ('Mon','Tue','Wed','Thu','Fri','Sat','Sun')),
+  scheduled_week_start date not null default date_trunc('week', now())::date
 );
 
--- Row-Level Security
 alter table public.tasks enable row level security;
 
--- Anyone (anon key) can read, insert, and update. DELETE is intentionally omitted.
-create policy "anon can read tasks"
-  on public.tasks for select
-  to anon
-  using (true);
+drop policy if exists "anon can read tasks" on public.tasks;
+create policy "anon can read tasks" on public.tasks
+  for select to anon using (true);
 
-create policy "anon can insert tasks"
-  on public.tasks for insert
-  to anon
-  with check (true);
+drop policy if exists "anon can insert tasks" on public.tasks;
+create policy "anon can insert tasks" on public.tasks
+  for insert to anon with check (true);
 
-create policy "anon can update tasks"
-  on public.tasks for update
-  to anon
-  using (true)
-  with check (true);
+drop policy if exists "anon can update tasks" on public.tasks;
+create policy "anon can update tasks" on public.tasks
+  for update to anon using (true) with check (true);
 
--- Explicit grants (RLS still enforces the policies above)
-grant select, insert, update on public.tasks to anon;
+drop policy if exists "anon can delete tasks" on public.tasks;
+create policy "anon can delete tasks" on public.tasks
+  for delete to anon using (true);
 
--- Enable realtime for the tasks table
+grant select, insert, update, delete on public.tasks to anon;
+
+-- ============================================================
+-- Table: lab_members (shared name list)
+-- ============================================================
+create table if not exists public.lab_members (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(name) between 1 and 40),
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists lab_members_name_ci_uniq
+  on public.lab_members (lower(name));
+
+alter table public.lab_members enable row level security;
+
+drop policy if exists "anon can read members" on public.lab_members;
+create policy "anon can read members" on public.lab_members
+  for select to anon using (true);
+
+drop policy if exists "anon can insert members" on public.lab_members;
+create policy "anon can insert members" on public.lab_members
+  for insert to anon with check (true);
+
+grant select, insert on public.lab_members to anon;
+
+-- ============================================================
+-- Enable realtime on both tables
+-- ============================================================
 do $$
 begin
-  if not exists (
-    select 1 from pg_publication_tables
-    where pubname = 'supabase_realtime'
-      and schemaname = 'public'
-      and tablename = 'tasks'
-  ) then
-    execute 'alter publication supabase_realtime add table public.tasks';
-  end if;
+  if not exists (select 1 from pg_publication_tables
+                 where pubname = 'supabase_realtime' and schemaname='public' and tablename='tasks')
+  then execute 'alter publication supabase_realtime add table public.tasks'; end if;
+  if not exists (select 1 from pg_publication_tables
+                 where pubname = 'supabase_realtime' and schemaname='public' and tablename='lab_members')
+  then execute 'alter publication supabase_realtime add table public.lab_members'; end if;
 end $$;
 ```
 
-If the realtime `alter publication` step fails for any reason, you can enable it in the UI: **Database → Replication → `supabase_realtime` → toggle `tasks` on**.
+If realtime doesn't turn on via SQL, enable it in the UI: **Database → Replication → `supabase_realtime` → toggle `tasks` and `lab_members` on**.
 
 ### 3. Wire up the keys
 
@@ -100,19 +124,24 @@ If you're rotating the anon key because it leaked or someone's abusing it:
 
 ## How to use (send this to your labmates)
 
-Go to **https://jbrisbois2.github.io/lab-tasks/**. First time you visit, enter your name — it's saved in your browser so you only do it once (there's a "change" link next to your name if you need to). Type a task in the box at the top and hit **Add**; check the box next to any task to mark it done. Each task has a small pill on the right where you can tag it with a day of the week (Mon–Sun) — anyone can set or change these tags at any time. Tasks are grouped into "This week", "Last week", etc. by when they were added, and within a week they sort in day order. Anyone in the lab can add, tag, or check off anything, and the page updates live as others make changes — no refresh needed. Checked-off tasks move to the **Completed** section at the bottom (click to expand) and stay there permanently as a record of what got done. If someone checks something off by mistake, just uncheck it.
+Go to **https://jbrisbois2.github.io/lab-tasks/**. First time you visit, pick your name from the shared list — or click **"+ Add new person…"** if you're not on it yet. Your choice is saved in your browser so you only do this once (there's a "change" link next to your name if you need to switch). Type a task in the box at the top, choose which week it's for (defaults to this week; you can pick up to 6 weeks ahead), and hit **Add**. Each task has two pills you can click anytime to change: a **week** pill (move it to a different week) and a **day** pill (tag it with Mon–Sun within that week). Anyone can change either at any time. Check the box to mark a task done, uncheck to bring it back. If someone made a typo or added something by mistake, click the small **×** on the task to delete it (there's a confirmation prompt). Tasks are grouped under headers like "This week", "Next week", "Last week (overdue)", etc., with this week highlighted. The page updates live as others make changes — no refresh needed. Checked-off tasks move to the **Completed** section at the bottom (click to expand) as a record of what got done.
+
+---
+
+## Free-tier maintenance
+
+- **GitHub Pages**: free forever for public repos. No action needed.
+- **Supabase free tier pauses after ~7 days of inactivity.** If nobody in the lab visits the site for a week, the database is paused and the site will show "Load error" until someone restores it. To restore: go to https://supabase.com/dashboard/project/hhfjjtyllxckjuvvpsrl and click the **Restore project** button in the banner at the top. Takes ~30 seconds; all data is preserved.
 
 ---
 
 ## Security note
 
-The anon key is embedded in the page source — that's expected for Supabase's public-write model, and the Row-Level Security policies above are what actually enforce safety. With those policies in place, anyone with the anon key can only:
+The anon key is embedded in the page source — that's expected for Supabase's public-write model. Row-Level Security (RLS) policies (see SQL above) are what actually enforce safety. With those policies in place, anyone with the anon key can:
 
-- **SELECT, INSERT, UPDATE** rows in `public.tasks`
+- **SELECT, INSERT, UPDATE, DELETE** rows in `public.tasks`
+- **SELECT, INSERT** rows in `public.lab_members` (no delete/update — names are permanent)
 
-They **cannot**:
+They **cannot** read or write any other table in your Supabase project (new tables default to RLS-blocked, and no policies grant the anon role access to them).
 
-- **DELETE** any row (no delete policy — completed tasks are archived forever)
-- Read or write any other table in your Supabase project (new tables default to RLS-blocked, and no policies grant the anon role access to them)
-
-Worst case: a stranger who finds the URL adds junk tasks or checks things off. If that happens, rotate the anon key (see above).
+Worst case: a stranger who finds the URL could add junk tasks, check things off, or delete tasks. If that happens, rotate the anon key (see above). If deletion becomes a problem, you can also remove the `delete` policy and grant on the tasks table to make tasks permanent again.

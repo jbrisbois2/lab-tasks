@@ -15,6 +15,8 @@
     --accent-hover: #24558c;
     --accent-soft: #eaf1f8;
     --danger: #b02b2b;
+    --danger-soft: #fdecec;
+    --warn: #b06a2b;
     --live: #40a862;
   }
   * { box-sizing: border-box; }
@@ -39,30 +41,15 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-  h1 {
-    font-size: 22px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-  .who {
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .who strong {
-    color: var(--text);
-    font-weight: 600;
-  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .who { font-size: 13px; color: var(--muted); }
+  .who strong { color: var(--text); font-weight: 600; }
   .who button {
-    background: none;
-    border: none;
-    color: var(--accent);
-    cursor: pointer;
-    font: inherit;
-    padding: 0 0 0 4px;
-    text-decoration: underline;
+    background: none; border: none; color: var(--accent);
+    cursor: pointer; font: inherit; padding: 0 0 0 4px; text-decoration: underline;
   }
   .who button:hover { color: var(--accent-hover); }
+
   .add {
     display: flex;
     gap: 8px;
@@ -72,9 +59,10 @@
     background: var(--bg);
     padding: 8px 0;
     z-index: 5;
+    flex-wrap: wrap;
   }
   .add input {
-    flex: 1;
+    flex: 1 1 200px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -88,6 +76,21 @@
     outline-offset: -1px;
     border-color: var(--accent);
   }
+  .add select.week-select {
+    padding: 10px 30px 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    font: inherit;
+    color: var(--text);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%236b6b66' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    max-width: 200px;
+  }
   .add button {
     padding: 10px 18px;
     background: var(--accent);
@@ -100,7 +103,8 @@
   }
   .add button:hover:not(:disabled) { background: var(--accent-hover); }
   .add button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .week-group { margin-bottom: 18px; }
+
+  .week-group { margin-bottom: 20px; }
   .week-group:last-child { margin-bottom: 0; }
   .week-header {
     font-size: 12px;
@@ -112,6 +116,7 @@
     display: flex;
     align-items: baseline;
     gap: 8px;
+    flex-wrap: wrap;
   }
   .week-header .range {
     font-weight: 500;
@@ -121,8 +126,19 @@
     color: var(--muted);
   }
   .week-header.current { color: var(--accent); }
-  .week-group .list { display: flex; flex-direction: column; gap: 8px; }
-  #completed-list { display: flex; flex-direction: column; gap: 8px; }
+  .week-header.overdue { color: var(--warn); }
+  .week-header.overdue::after {
+    content: "overdue";
+    font-size: 10px;
+    background: var(--warn);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+  }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+
   .task {
     display: flex;
     gap: 12px;
@@ -143,7 +159,7 @@
   .task .body { flex: 1; min-width: 0; }
   .task .title-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     justify-content: space-between;
   }
@@ -153,21 +169,20 @@
     min-width: 0;
     flex: 1;
   }
-  .task.done .title {
-    text-decoration: line-through;
-    color: var(--muted);
+  .task.done .title { text-decoration: line-through; color: var(--muted); }
+  .task .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .task .pills {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
   }
-  .task .meta {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-  .day-tag {
+
+  .tag {
     font: inherit;
     font-size: 12px;
     font-weight: 600;
-    padding: 3px 8px;
-    padding-right: 22px;
+    padding: 3px 22px 3px 8px;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: var(--bg);
@@ -179,13 +194,34 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M1 3l4 4 4-4' stroke='%236b6b66' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-repeat: no-repeat;
     background-position: right 6px center;
+    max-width: 100%;
   }
-  .day-tag:hover { border-color: var(--accent); color: var(--text); }
-  .day-tag.set {
+  .tag:hover { border-color: var(--accent); color: var(--text); }
+  .tag.set {
     color: var(--accent);
     background-color: var(--accent-soft);
     border-color: var(--accent);
   }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 20px;
+    line-height: 1;
+    padding: 0 6px;
+    opacity: 0.4;
+    flex-shrink: 0;
+    border-radius: 4px;
+    align-self: flex-start;
+  }
+  .delete-btn:hover {
+    color: var(--danger);
+    background: var(--danger-soft);
+    opacity: 1;
+  }
+
   .empty {
     text-align: center;
     color: var(--muted);
@@ -219,6 +255,7 @@
   .completed-section[open] summary::before { transform: rotate(90deg); }
   .completed-section summary:hover { color: var(--text); }
   .completed-section #completed-list { margin-top: 8px; }
+
   .status {
     font-size: 12px;
     color: var(--muted);
@@ -227,19 +264,77 @@
   }
   .status .dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: 8px; height: 8px; border-radius: 50%;
     background: #c9c9c2;
-    margin-right: 6px;
-    vertical-align: middle;
+    margin-right: 6px; vertical-align: middle;
   }
   .status.live .dot { background: var(--live); }
   .status.error .dot { background: var(--danger); }
+
+  /* Modal dialog */
+  dialog.modal {
+    border: none;
+    border-radius: 10px;
+    padding: 0;
+    max-width: 420px;
+    width: calc(100% - 32px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  dialog.modal::backdrop { background: rgba(0,0,0,0.35); }
+  dialog.modal .dialog-body {
+    padding: 20px 20px 16px;
+  }
+  dialog.modal h2 { margin: 0 0 6px; font-size: 18px; }
+  dialog.modal .help { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+  dialog.modal label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  dialog.modal select, dialog.modal input[type=text] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+    background: #fff;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  dialog.modal select:focus, dialog.modal input[type=text]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+    border-color: var(--accent);
+  }
+  dialog.modal .dialog-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--border);
+    background: #fafafa;
+    border-radius: 0 0 10px 10px;
+  }
+  dialog.modal .dialog-actions button {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  dialog.modal .dialog-actions button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  dialog.modal .dialog-actions button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  dialog.modal .dialog-actions button:hover:not(:disabled):not(.primary) { background: #f0f0ec; }
+  dialog.modal .dialog-actions button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+
   @media (max-width: 480px) {
     .app { padding: 16px 12px 48px; }
     h1 { font-size: 20px; }
     .add button { padding: 10px 14px; }
+    .add select.week-select { max-width: none; flex: 1; }
   }
 </style>
 </head>
@@ -255,6 +350,7 @@
 
   <form class="add" id="add-form">
     <input id="add-input" type="text" placeholder="Add a task…" maxlength="500" autocomplete="off" required>
+    <select id="add-week" class="week-select" aria-label="Which week"></select>
     <button type="submit" id="add-btn">Add</button>
   </form>
 
@@ -263,11 +359,30 @@
 
   <details class="completed-section" id="completed-section">
     <summary>Completed (<span id="completed-count">0</span>)</summary>
-    <div id="completed-list"></div>
+    <div id="completed-list" class="list"></div>
   </details>
 
   <div class="status" id="status"><span class="dot"></span><span id="status-text">Connecting…</span></div>
 </div>
+
+<dialog class="modal" id="name-dialog">
+  <form id="name-form">
+    <div class="dialog-body">
+      <h2>Who are you?</h2>
+      <p class="help">Pick your name from the list, or add yourself if you're new.</p>
+      <label for="name-select">Your name</label>
+      <select id="name-select" required></select>
+      <div id="new-name-row" hidden>
+        <label for="new-name-input">Add new person</label>
+        <input id="new-name-input" type="text" placeholder="First name (or Firstname Lastname)" maxlength="40" autocomplete="off">
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" id="name-cancel">Cancel</button>
+      <button type="submit" id="name-confirm" class="primary">Continue</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -279,46 +394,14 @@
 
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const DAY_ORDER = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:7 };
+  const FUTURE_WEEKS_IN_PICKER = 6;
 
-  // --- Identity ---
-  const NAME_KEY = 'lab-tasks:name';
-  function getName() { return (localStorage.getItem(NAME_KEY) || '').trim(); }
-  function saveName(n) {
-    localStorage.setItem(NAME_KEY, n);
-    document.getElementById('who-name').textContent = n;
+  // --- Utility ---
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
   }
-  function promptName(required) {
-    let cur = getName();
-    while (true) {
-      const input = window.prompt(
-        required ? "What's your name? (shown on tasks you add or check off)" : "Change your name to:",
-        cur
-      );
-      if (input === null) {
-        if (required && !cur) continue;
-        return cur;
-      }
-      const trimmed = input.trim();
-      if (trimmed.length >= 1 && trimmed.length <= 40) {
-        saveName(trimmed);
-        return trimmed;
-      }
-      window.alert('Please enter a name (1–40 characters).');
-    }
-  }
-  if (!getName()) promptName(true);
-  document.getElementById('who-name').textContent = getName();
-  document.getElementById('change-name').addEventListener('click', () => promptName(false));
-
-  // --- State + rendering ---
-  const openList = document.getElementById('open-list');
-  const openEmpty = document.getElementById('open-empty');
-  const completedList = document.getElementById('completed-list');
-  const completedCount = document.getElementById('completed-count');
-  const statusEl = document.getElementById('status');
-  const statusText = document.getElementById('status-text');
-  const tasks = new Map();
-
   function fmtDate(iso) {
     if (!iso) return '';
     const d = new Date(iso);
@@ -330,42 +413,238 @@
     if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
     return d.toLocaleString(undefined, opts);
   }
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[c]));
-  }
 
-  // Monday of the week containing dateStr, at 00:00 local time.
-  function weekStart(dateStr) {
-    const d = new Date(dateStr);
+  // Week: local Monday at 00:00
+  function mondayOf(date) {
+    const d = new Date(date);
     d.setHours(0, 0, 0, 0);
-    const day = d.getDay(); // 0=Sun, 1=Mon..6=Sat
+    const day = d.getDay(); // 0=Sun..6=Sat
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
     return d;
   }
-  function currentWeekStart() { return weekStart(new Date()); }
-  function fmtRange(start) {
-    const end = new Date(start);
+  function currentMonday() { return mondayOf(new Date()); }
+  function ymd(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  function fromYmd(s) {
+    // Parse "YYYY-MM-DD" as local date to avoid TZ shifts
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  function weekOffset(mondayDate) {
+    const cur = currentMonday();
+    return Math.round((mondayDate - cur) / (7 * 86400000));
+  }
+  function fmtWeekRange(monday) {
+    const end = new Date(monday);
     end.setDate(end.getDate() + 6);
     const opts = { month: 'short', day: 'numeric' };
-    const a = start.toLocaleDateString(undefined, opts);
-    const b = end.toLocaleDateString(undefined, opts);
-    return `${a} – ${b}`;
+    return `${monday.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, opts)}`;
   }
-  function weekLabel(start) {
-    const cur = currentWeekStart();
-    const diffWeeks = Math.round((cur - start) / (7 * 86400000));
-    const range = fmtRange(start);
-    if (diffWeeks === 0) return { title: 'This week', range, current: true };
-    if (diffWeeks === 1) return { title: 'Last week', range, current: false };
-    if (diffWeeks === -1) return { title: 'Next week', range, current: false };
-    return { title: '', range, current: false };
+  function weekTitle(offset) {
+    if (offset === 0) return 'This week';
+    if (offset === 1) return 'Next week';
+    if (offset === -1) return 'Last week';
+    if (offset > 1) return `In ${offset} weeks`;
+    return `${-offset} weeks ago`;
   }
 
-  function dayTagHtml(t) {
-    const cls = t.day_of_week ? 'day-tag set' : 'day-tag';
+  // --- Identity ---
+  const NAME_KEY = 'lab-tasks:name';
+  let currentName = (localStorage.getItem(NAME_KEY) || '').trim();
+  document.getElementById('who-name').textContent = currentName || '(not set)';
+
+  const nameDialog = document.getElementById('name-dialog');
+  const nameSelect = document.getElementById('name-select');
+  const newNameRow = document.getElementById('new-name-row');
+  const newNameInput = document.getElementById('new-name-input');
+  const nameCancel = document.getElementById('name-cancel');
+  const nameConfirm = document.getElementById('name-confirm');
+  const nameForm = document.getElementById('name-form');
+
+  let membersLoaded = false;
+  const members = new Map(); // id -> {id, name}
+
+  function populateNameSelect(preselect) {
+    const opts = ['<option value="" disabled' + (preselect ? '' : ' selected') + '>— select your name —</option>'];
+    const sorted = Array.from(members.values()).sort((a, b) => a.name.localeCompare(b.name));
+    for (const m of sorted) {
+      const selected = preselect && preselect.toLowerCase() === m.name.toLowerCase() ? ' selected' : '';
+      opts.push(`<option value="${esc(m.name)}"${selected}>${esc(m.name)}</option>`);
+    }
+    opts.push('<option value="__new__">+ Add new person…</option>');
+    nameSelect.innerHTML = opts.join('');
+  }
+
+  async function loadMembers() {
+    const { data, error } = await client.from('lab_members').select('*').order('name');
+    if (error) {
+      console.error('loadMembers:', error);
+      return;
+    }
+    members.clear();
+    for (const m of (data || [])) members.set(m.id, m);
+    membersLoaded = true;
+  }
+
+  function openNameDialog(options) {
+    const required = options && options.required;
+    populateNameSelect(currentName);
+    newNameRow.hidden = true;
+    newNameInput.value = '';
+    nameCancel.hidden = !!required;
+    // Prevent Esc from closing when required
+    nameDialog.showModal();
+    if (required) nameDialog.addEventListener('cancel', preventCancel);
+    else nameDialog.removeEventListener('cancel', preventCancel);
+    setTimeout(() => nameSelect.focus(), 0);
+  }
+  function preventCancel(e) { e.preventDefault(); }
+
+  nameSelect.addEventListener('change', () => {
+    if (nameSelect.value === '__new__') {
+      newNameRow.hidden = false;
+      newNameInput.focus();
+    } else {
+      newNameRow.hidden = true;
+    }
+  });
+
+  nameCancel.addEventListener('click', () => {
+    nameDialog.close();
+  });
+
+  nameForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    let chosen = nameSelect.value;
+
+    if (chosen === '__new__') {
+      const newName = newNameInput.value.trim();
+      if (newName.length < 1 || newName.length > 40) {
+        window.alert('Please enter a name (1–40 characters).');
+        newNameInput.focus();
+        return;
+      }
+      // Case-insensitive duplicate check against loaded members
+      const existing = Array.from(members.values())
+        .find(m => m.name.toLowerCase() === newName.toLowerCase());
+      if (existing) {
+        chosen = existing.name;
+      } else {
+        nameConfirm.disabled = true;
+        const { data, error } = await client.from('lab_members')
+          .insert({ name: newName }).select().single();
+        nameConfirm.disabled = false;
+        if (error) {
+          // Race: someone else added same name concurrently
+          if (error.code === '23505') {
+            await loadMembers();
+            const race = Array.from(members.values())
+              .find(m => m.name.toLowerCase() === newName.toLowerCase());
+            chosen = race ? race.name : newName;
+          } else {
+            window.alert('Could not add name: ' + error.message);
+            return;
+          }
+        } else {
+          members.set(data.id, data);
+          chosen = data.name;
+        }
+      }
+    }
+
+    if (!chosen || chosen === '__new__') return;
+    currentName = chosen;
+    localStorage.setItem(NAME_KEY, currentName);
+    document.getElementById('who-name').textContent = currentName;
+    nameDialog.close();
+  });
+
+  document.getElementById('change-name').addEventListener('click', async () => {
+    if (!membersLoaded) await loadMembers();
+    openNameDialog({ required: false });
+  });
+
+  async function ensureName() {
+    if (currentName) return currentName;
+    if (!membersLoaded) await loadMembers();
+    openNameDialog({ required: true });
+    // Wait until dialog closes with a name set
+    return await new Promise((resolve) => {
+      const check = () => {
+        if (currentName) resolve(currentName);
+        else nameDialog.addEventListener('close', check, { once: true });
+      };
+      check();
+    });
+  }
+
+  // --- Week picker for add form ---
+  const addWeekSelect = document.getElementById('add-week');
+  function buildAddWeekOptions() {
+    const opts = [];
+    const cur = currentMonday();
+    for (let i = 0; i <= FUTURE_WEEKS_IN_PICKER; i++) {
+      const d = new Date(cur);
+      d.setDate(cur.getDate() + i * 7);
+      const key = ymd(d);
+      const label = `${weekTitle(i)} · ${fmtWeekRange(d)}`;
+      opts.push({ value: key, label });
+    }
+    addWeekSelect.innerHTML = opts.map((o, i) =>
+      `<option value="${esc(o.value)}"${i === 0 ? ' selected' : ''}>${esc(o.label)}</option>`
+    ).join('');
+  }
+  buildAddWeekOptions();
+  // Rebuild daily so labels stay accurate if page is left open across a week boundary
+  setInterval(buildAddWeekOptions, 60 * 60 * 1000);
+
+  // --- State ---
+  const openList = document.getElementById('open-list');
+  const openEmpty = document.getElementById('open-empty');
+  const completedList = document.getElementById('completed-list');
+  const completedCount = document.getElementById('completed-count');
+  const statusEl = document.getElementById('status');
+  const statusText = document.getElementById('status-text');
+  const tasks = new Map();
+
+  function setStatus(kind, text) {
+    statusEl.className = 'status' + (kind ? ' ' + kind : '');
+    statusText.textContent = text;
+  }
+
+  // --- Render ---
+  function taskWeekPickerHtml(t) {
+    const curKey = t.scheduled_week_start;
+    const cur = currentMonday();
+    const opts = [];
+    for (let i = 0; i <= FUTURE_WEEKS_IN_PICKER; i++) {
+      const d = new Date(cur);
+      d.setDate(cur.getDate() + i * 7);
+      const key = ymd(d);
+      opts.push({ value: key, label: `${weekTitle(i)} · ${fmtWeekRange(d)}`, offset: i });
+    }
+    // If task's current week isn't in the standard list (past or far future), include it
+    if (curKey && !opts.some(o => o.value === curKey)) {
+      const d = fromYmd(curKey);
+      const off = weekOffset(d);
+      opts.unshift({ value: curKey, label: `${weekTitle(off)} · ${fmtWeekRange(d)}`, offset: off });
+    }
+    const html = opts.map(o => {
+      const sel = o.value === curKey ? ' selected' : '';
+      return `<option value="${esc(o.value)}"${sel}>${esc(o.label)}</option>`;
+    }).join('');
+    // Non-current week is highlighted
+    const cls = (curKey && curKey !== ymd(cur)) ? 'tag set' : 'tag';
+    return `<select class="${cls}" data-week-tag aria-label="Which week">${html}</select>`;
+  }
+
+  function taskDayPickerHtml(t) {
+    const cls = t.day_of_week ? 'tag set' : 'tag';
     const opts = ['', ...DAYS].map(d => {
       const selected = (t.day_of_week || '') === d ? ' selected' : '';
       const label = d || 'no day';
@@ -381,8 +660,9 @@
         <div class="body">
           <div class="title-row">
             <span class="title">${esc(t.title)}</span>
-            ${dayTagHtml(t)}
+            <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task" title="Delete task">×</button>
           </div>
+          <div class="pills">${taskWeekPickerHtml(t)}${taskDayPickerHtml(t)}</div>
           <div class="meta">added by ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
         </div>
       </div>`;
@@ -396,6 +676,7 @@
         <div class="body">
           <div class="title-row">
             <span class="title">${esc(t.title)}</span>
+            <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task" title="Delete task">×</button>
           </div>
           <div class="meta">completed by ${esc(t.completed_by)} · ${esc(fmtDate(t.completed_at))}${dayNote}</div>
         </div>
@@ -408,17 +689,18 @@
     const done = all.filter(t => t.completed_at)
       .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
-    // Group open tasks by ISO week of created_at
+    // Group open by scheduled_week_start (fallback: created_at week)
     const groups = new Map();
     for (const t of open) {
-      const start = weekStart(t.created_at);
-      const key = start.toISOString().slice(0, 10);
-      if (!groups.has(key)) groups.set(key, { start, tasks: [] });
+      const key = t.scheduled_week_start || ymd(mondayOf(t.created_at));
+      if (!groups.has(key)) {
+        groups.set(key, { key, start: fromYmd(key), tasks: [] });
+      }
       groups.get(key).tasks.push(t);
     }
-    const sortedGroups = Array.from(groups.values())
-      .sort((a, b) => b.start - a.start);
-    for (const g of sortedGroups) {
+
+    // Sort tasks within each group: day Mon-Sun, unset last, then created_at desc
+    for (const g of groups.values()) {
       g.tasks.sort((a, b) => {
         const da = a.day_of_week ? DAY_ORDER[a.day_of_week] : 8;
         const db = b.day_of_week ? DAY_ORDER[b.day_of_week] : 8;
@@ -427,14 +709,31 @@
       });
     }
 
+    // Sort groups: current(0), future ascending, past descending (nearest past first)
+    const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+      const aOff = weekOffset(a.start);
+      const bOff = weekOffset(b.start);
+      const aTier = aOff === 0 ? 0 : (aOff > 0 ? 1 : 2);
+      const bTier = bOff === 0 ? 0 : (bOff > 0 ? 1 : 2);
+      if (aTier !== bTier) return aTier - bTier;
+      if (aTier === 1) return aOff - bOff;
+      if (aTier === 2) return bOff - aOff;
+      return 0;
+    });
+
     openList.innerHTML = sortedGroups.map(g => {
-      const lbl = weekLabel(g.start);
-      const headerText = lbl.title
-        ? `<span>${esc(lbl.title)}</span><span class="range">${esc(lbl.range)}</span>`
-        : `<span class="range">${esc(lbl.range)}</span>`;
+      const off = weekOffset(g.start);
+      const title = weekTitle(off);
+      const range = fmtWeekRange(g.start);
+      let headerCls = 'week-header';
+      if (off === 0) headerCls += ' current';
+      else if (off < 0) headerCls += ' overdue';
       return `
         <div class="week-group">
-          <h2 class="week-header${lbl.current ? ' current' : ''}">${headerText}</h2>
+          <h2 class="${headerCls}">
+            <span>${esc(title)}</span>
+            <span class="range">${esc(range)}</span>
+          </h2>
           <div class="list">${g.tasks.map(openTaskHtml).join('')}</div>
         </div>`;
     }).join('');
@@ -444,11 +743,6 @@
     completedCount.textContent = done.length;
   }
 
-  function setStatus(kind, text) {
-    statusEl.className = 'status' + (kind ? ' ' + kind : '');
-    statusText.textContent = text;
-  }
-
   // --- Actions ---
   document.getElementById('add-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -456,15 +750,18 @@
     const btn = document.getElementById('add-btn');
     const title = input.value.trim();
     if (!title) return;
-    const name = getName() || promptName(true);
+
+    const name = await ensureName();
+    const week = addWeekSelect.value;
     btn.disabled = true;
     try {
       const { data, error } = await client.from('tasks')
-        .insert({ title, created_by: name })
+        .insert({ title, created_by: name, scheduled_week_start: week })
         .select().single();
       if (error) throw error;
       tasks.set(data.id, data);
       input.value = '';
+      buildAddWeekOptions(); // resets to "This week"
       render();
       input.focus();
     } catch (err) {
@@ -481,7 +778,24 @@
     if (!taskEl) return;
     const id = taskEl.dataset.id;
 
-    // Day-of-week picker
+    // Week picker
+    if (target.matches('[data-week-tag]')) {
+      const value = target.value;
+      target.disabled = true;
+      try {
+        const { data, error } = await client.from('tasks')
+          .update({ scheduled_week_start: value }).eq('id', id).select().single();
+        if (error) throw error;
+        tasks.set(data.id, data);
+        render();
+      } catch (err) {
+        window.alert('Could not move task: ' + (err.message || err));
+        target.disabled = false;
+      }
+      return;
+    }
+
+    // Day picker
     if (target.matches('[data-day-tag]')) {
       const value = target.value || null;
       target.disabled = true;
@@ -502,7 +816,7 @@
     if (target instanceof HTMLInputElement && target.type === 'checkbox') {
       const cb = target;
       const action = cb.dataset.action;
-      const name = getName() || promptName(true);
+      const name = await ensureName();
       cb.disabled = true;
       const patch = action === 'complete'
         ? { completed_by: name, completed_at: new Date().toISOString() }
@@ -521,16 +835,44 @@
     }
   });
 
+  // Delete via click on × button
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest && e.target.closest('[data-action="delete"]');
+    if (!btn) return;
+    const taskEl = btn.closest('.task');
+    if (!taskEl) return;
+    const id = taskEl.dataset.id;
+    const title = (taskEl.querySelector('.title') || {}).textContent || '(task)';
+    if (!window.confirm(`Delete this task?\n\n"${title}"`)) return;
+    btn.disabled = true;
+    try {
+      const { error } = await client.from('tasks').delete().eq('id', id);
+      if (error) throw error;
+      tasks.delete(id);
+      render();
+    } catch (err) {
+      window.alert('Could not delete task: ' + (err.message || err));
+      btn.disabled = false;
+    }
+  });
+
   // --- Load + sync ---
   async function loadAll() {
-    const { data, error } = await client.from('tasks')
-      .select('*').order('created_at', { ascending: false });
-    if (error) {
-      setStatus('error', 'Load error: ' + error.message);
+    const [tasksRes, membersRes] = await Promise.all([
+      client.from('tasks').select('*').order('created_at', { ascending: false }),
+      client.from('lab_members').select('*').order('name'),
+    ]);
+    if (tasksRes.error) {
+      setStatus('error', 'Load error: ' + tasksRes.error.message);
       return;
     }
     tasks.clear();
-    for (const row of (data || [])) tasks.set(row.id, row);
+    for (const row of (tasksRes.data || [])) tasks.set(row.id, row);
+    if (!membersRes.error) {
+      members.clear();
+      for (const m of (membersRes.data || [])) members.set(m.id, m);
+      membersLoaded = true;
+    }
     render();
   }
 
@@ -551,8 +893,19 @@
       }
     });
 
+  client.channel('members-changes')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'lab_members' },
+      (payload) => {
+        if (payload.eventType === 'DELETE') members.delete(payload.old.id);
+        else if (payload.new) members.set(payload.new.id, payload.new);
+      })
+    .subscribe();
+
   setInterval(loadAll, 15000);
-  loadAll();
+  loadAll().then(() => {
+    if (!currentName) ensureName();
+  });
 })();
 </script>
 </body>
