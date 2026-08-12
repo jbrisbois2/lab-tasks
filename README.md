@@ -28,7 +28,8 @@ create table if not exists public.tasks (
   created_by text not null check (char_length(created_by) between 1 and 40),
   created_at timestamptz not null default now(),
   completed_by text check (completed_by is null or char_length(completed_by) between 1 and 40),
-  completed_at timestamptz
+  completed_at timestamptz,
+  day_of_week text check (day_of_week is null or day_of_week in ('Mon','Tue','Wed','Thu','Fri','Sat','Sun'))
 );
 
 -- Row-Level Security
