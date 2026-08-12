@@ -100,7 +100,7 @@ If you're rotating the anon key because it leaked or someone's abusing it:
 
 ## How to use (send this to your labmates)
 
-Go to **https://jbrisbois2.github.io/lab-tasks/**. First time you visit, enter your name — it's saved in your browser so you only do it once (there's a "change" link next to your name if you need to). Type a task in the box at the top and hit **Add**; check the box next to any task to mark it done. Anyone in the lab can add or check off anything, and the page updates live as others make changes — no refresh needed. Checked-off tasks move to the **Completed** section at the bottom (click to expand) and stay there permanently as a record of what got done. If someone checks something off by mistake, just uncheck it.
+Go to **https://jbrisbois2.github.io/lab-tasks/**. First time you visit, enter your name — it's saved in your browser so you only do it once (there's a "change" link next to your name if you need to). Type a task in the box at the top and hit **Add**; check the box next to any task to mark it done. Each task has a small pill on the right where you can tag it with a day of the week (Mon–Sun) — anyone can set or change these tags at any time. Tasks are grouped into "This week", "Last week", etc. by when they were added, and within a week they sort in day order. Anyone in the lab can add, tag, or check off anything, and the page updates live as others make changes — no refresh needed. Checked-off tasks move to the **Completed** section at the bottom (click to expand) and stay there permanently as a record of what got done. If someone checks something off by mistake, just uncheck it.
 
 ---
 
