@@ -202,6 +202,13 @@
     background-color: var(--accent-soft);
     border-color: var(--accent);
   }
+  span.tag.static {
+    cursor: default;
+    padding-right: 8px;
+    background-image: none;
+    display: inline-block;
+  }
+  span.tag.static:hover { border-color: var(--accent); color: var(--accent); }
 
   .delete-btn {
     background: none;
@@ -405,13 +412,11 @@
   function fmtDate(iso) {
     if (!iso) return '';
     const d = new Date(iso);
-    const now = new Date();
-    const sameDay = d.toDateString() === now.toDateString();
-    const opts = sameDay
-      ? { hour: 'numeric', minute: '2-digit' }
-      : { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-    if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
-    return d.toLocaleString(undefined, opts);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return `${mm}/${dd}/${yy} ${time}`;
   }
 
   // Week: local Monday at 00:00
@@ -668,8 +673,20 @@
       </div>`;
   }
 
+  function taskWeekTagStatic(t) {
+    if (!t.scheduled_week_start) return '';
+    const d = fromYmd(t.scheduled_week_start);
+    const off = weekOffset(d);
+    const label = `${weekTitle(off)} · ${fmtWeekRange(d)}`;
+    return `<span class="tag set static">${esc(label)}</span>`;
+  }
+  function taskDayTagStatic(t) {
+    if (!t.day_of_week) return '';
+    return `<span class="tag set static">${esc(t.day_of_week)}</span>`;
+  }
+
   function doneTaskHtml(t) {
-    const dayNote = t.day_of_week ? ` · was ${esc(t.day_of_week)}` : '';
+    const pills = `${taskWeekTagStatic(t)}${taskDayTagStatic(t)}`;
     return `
       <div class="task done" data-id="${esc(t.id)}">
         <input type="checkbox" data-action="uncomplete" checked aria-label="Un-complete task">
@@ -678,7 +695,9 @@
             <span class="title">${esc(t.title)}</span>
             <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task" title="Delete task">×</button>
           </div>
-          <div class="meta">completed by ${esc(t.completed_by)} · ${esc(fmtDate(t.completed_at))}${dayNote}</div>
+          ${pills ? `<div class="pills">${pills}</div>` : ''}
+          <div class="meta">added by ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
+          <div class="meta">completed by ${esc(t.completed_by)} · ${esc(fmtDate(t.completed_at))}</div>
         </div>
       </div>`;
   }
