@@ -97,7 +97,7 @@
     background-position: right 10px center;
     max-width: 200px;
   }
-  .add button {
+  .add button.submit {
     padding: 10px 18px;
     background: var(--accent);
     color: #fff;
@@ -107,8 +107,29 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .add button:hover:not(:disabled) { background: var(--accent-hover); }
-  .add button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .add button.submit:hover:not(:disabled) { background: var(--accent-hover); }
+  .add button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .add button.days-btn {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+    max-width: 200px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .add button.days-btn:hover { border-color: var(--accent); }
+  .add button.days-btn.set {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
 
   .week-group { margin-bottom: 20px; }
   .week-group:last-child { margin-bottom: 0; }
@@ -384,8 +405,9 @@
   @media (max-width: 480px) {
     .app { padding: 16px 12px 48px; }
     h1 { font-size: 20px; }
-    .add button { padding: 10px 14px; }
-    .add select.week-select { max-width: none; flex: 1; }
+    .add button.submit { padding: 10px 14px; }
+    .add select.week-select,
+    .add button.days-btn { max-width: none; flex: 1 1 140px; }
   }
 </style>
 </head>
@@ -404,7 +426,8 @@
   <form class="add" id="add-form">
     <input id="add-input" type="text" placeholder="Add a task… / 添加任务…" maxlength="500" autocomplete="off" required>
     <select id="add-week" class="week-select" aria-label="Which week / 选择周"></select>
-    <button type="submit" id="add-btn">Add / 添加</button>
+    <button type="button" id="add-days-btn" class="days-btn" aria-label="Days of week / 选择星期">no day / 未指定</button>
+    <button type="submit" id="add-btn" class="submit">Add / 添加</button>
   </form>
 
   <div id="open-list"></div>
@@ -677,6 +700,17 @@
   // Rebuild daily so labels stay accurate if page is left open across a week boundary
   setInterval(buildAddWeekOptions, 60 * 60 * 1000);
 
+  // --- Pending days for new task ---
+  const addDaysBtn = document.getElementById('add-days-btn');
+  let pendingNewDays = [];
+  function updateAddDaysBtn() {
+    const label = pendingNewDays.length === 0
+      ? 'no day / 未指定'
+      : daysLabel(pendingNewDays, addWeekSelect.value);
+    addDaysBtn.textContent = label;
+    addDaysBtn.classList.toggle('set', pendingNewDays.length > 0);
+  }
+
   // --- State ---
   const openList = document.getElementById('open-list');
   const openEmpty = document.getElementById('open-empty');
@@ -869,15 +903,19 @@
 
     const name = await ensureName();
     const week = addWeekSelect.value;
+    const days = pendingNewDays.length > 0 ? [...pendingNewDays] : null;
     btn.disabled = true;
     try {
+      const payload = { title, created_by: name, scheduled_week_start: week };
+      if (days) payload.days_of_week = days;
       const { data, error } = await client.from('tasks')
-        .insert({ title, created_by: name, scheduled_week_start: week })
-        .select().single();
+        .insert(payload).select().single();
       if (error) throw error;
       tasks.set(data.id, data);
       input.value = '';
+      pendingNewDays = [];
       buildAddWeekOptions(); // resets to "This week"
+      updateAddDaysBtn();
       render();
       input.focus();
     } catch (err) {
@@ -951,11 +989,21 @@
     }).join('');
   }
   function openDaysDialog(taskId) {
-    const t = tasks.get(taskId);
-    if (!t) return;
-    daysEditingId = taskId;
-    buildDaysCheckboxes(t.scheduled_week_start);
-    const current = new Set(taskDays(t));
+    let weekKey;
+    let current;
+    if (taskId === null) {
+      // New-task mode: use add form's selected week and pending days
+      daysEditingId = null;
+      weekKey = addWeekSelect.value;
+      current = new Set(pendingNewDays);
+    } else {
+      const t = tasks.get(taskId);
+      if (!t) return;
+      daysEditingId = taskId;
+      weekKey = t.scheduled_week_start;
+      current = new Set(taskDays(t));
+    }
+    buildDaysCheckboxes(weekKey);
     daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => {
       cb.checked = current.has(cb.value);
     });
@@ -977,10 +1025,18 @@
   daysCancel.addEventListener('click', () => { daysDialog.close(); daysEditingId = null; });
   daysForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!daysEditingId) return;
     const selected = Array.from(daysCheckboxes.querySelectorAll('input[type=checkbox]:checked'))
       .map(cb => cb.value)
       .sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b]);
+
+    // New-task mode: just stash locally
+    if (daysEditingId === null) {
+      pendingNewDays = selected;
+      updateAddDaysBtn();
+      daysDialog.close();
+      return;
+    }
+
     const id = daysEditingId;
     daysSave.disabled = true;
     try {
@@ -998,14 +1054,21 @@
     }
   });
 
-  // Open days dialog when the days pill is clicked
+  // Open days dialog when the days pill is clicked (task) or the add-form button
   document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('#add-days-btn')) {
+      openDaysDialog(null);
+      return;
+    }
     const btn = e.target.closest && e.target.closest('[data-days-btn]');
     if (!btn) return;
     const taskEl = btn.closest('.task');
     if (!taskEl) return;
     openDaysDialog(taskEl.dataset.id);
   });
+
+  // Re-render add-days button label when the week changes (day dates depend on week)
+  addWeekSelect.addEventListener('change', updateAddDaysBtn);
 
   // Delete via click on × button
   document.addEventListener('click', async (e) => {
