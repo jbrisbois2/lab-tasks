@@ -889,7 +889,36 @@
     }).join('');
     openEmpty.hidden = open.length > 0;
 
-    completedList.innerHTML = done.map(doneTaskHtml).join('');
+    // Group completed tasks by week (scheduled_week_start, fallback to completed_at week)
+    const doneGroups = new Map();
+    for (const t of done) {
+      const key = t.scheduled_week_start || ymd(mondayOf(t.completed_at));
+      if (!doneGroups.has(key)) {
+        doneGroups.set(key, { key, start: fromYmd(key), tasks: [] });
+      }
+      doneGroups.get(key).tasks.push(t);
+    }
+    // Within a week, sort by completed_at desc (most recent first)
+    for (const g of doneGroups.values()) {
+      g.tasks.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+    }
+    // Sort groups: most recent week first (highest week key)
+    const sortedDoneGroups = Array.from(doneGroups.values()).sort((a, b) => b.start - a.start);
+
+    completedList.innerHTML = sortedDoneGroups.map(g => {
+      const off = weekOffset(g.start);
+      const title = weekTitle(off);
+      const range = fmtWeekRange(g.start);
+      const headerCls = off === 0 ? 'week-header current' : 'week-header';
+      return `
+        <div class="week-group">
+          <h2 class="${headerCls}">
+            <span>${esc(title)}</span>
+            <span class="range">${esc(range)}</span>
+          </h2>
+          <div class="list">${g.tasks.map(doneTaskHtml).join('')}</div>
+        </div>`;
+    }).join('');
     completedCount.textContent = done.length;
   }
 
