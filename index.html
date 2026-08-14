@@ -245,36 +245,6 @@
     font-weight: 600;
   }
 
-  #days-checkboxes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  #days-checkboxes label,
-  .all-week-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    background: #fff;
-  }
-  #days-checkboxes label:hover,
-  .all-week-row:hover { border-color: var(--accent); }
-  #days-checkboxes input[type=checkbox],
-  .all-week-row input[type=checkbox] {
-    margin: 0;
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-  .all-week-row { margin-bottom: 12px; }
-
   .delete-btn {
     background: none;
     border: none;
@@ -402,12 +372,82 @@
   dialog.modal .dialog-actions button:hover:not(:disabled):not(.primary) { background: #f0f0ec; }
   dialog.modal .dialog-actions button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 
+  /* Dates dialog: multi-week checkbox grid */
+  dialog.modal .dialog-body.scroll {
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+  }
+  .week-block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px 12px;
+    margin-bottom: 10px;
+    background: #fff;
+  }
+  .week-block.current { border-color: var(--accent); background: var(--accent-soft); }
+  .week-block-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .week-block-head label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 700;
+  }
+  .week-block-head input[type=checkbox] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .week-block-head .title { font-weight: 700; }
+  .week-block-head .range { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .week-block .days-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .week-block .days-grid label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0;
+  }
+  .week-block .days-grid label:hover { border-color: var(--accent); }
+  .week-block .days-grid input[type=checkbox] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .week-block .days-grid label.checked {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
   @media (max-width: 480px) {
     .app { padding: 16px 12px 48px; }
     h1 { font-size: 20px; }
     .add button.submit { padding: 10px 14px; }
-    .add select.week-select,
-    .add button.days-btn { max-width: none; flex: 1 1 140px; }
+    .add button.days-btn { max-width: none; flex: 1 1 100%; }
+    .week-block .days-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -425,8 +465,7 @@
 
   <form class="add" id="add-form">
     <input id="add-input" type="text" placeholder="Add a task… / 添加任务…" maxlength="500" autocomplete="off" required>
-    <select id="add-week" class="week-select" aria-label="Which week / 选择周"></select>
-    <button type="button" id="add-days-btn" class="days-btn" aria-label="Days of week / 选择星期">no day / 未指定</button>
+    <button type="button" id="add-dates-btn" class="days-btn" aria-label="Pick dates / 选择日期">no dates / 未指定</button>
     <button type="submit" id="add-btn" class="submit">Add / 添加</button>
   </form>
 
@@ -460,21 +499,17 @@
   </form>
 </dialog>
 
-<dialog class="modal" id="days-dialog">
-  <form id="days-form">
-    <div class="dialog-body">
-      <h2>Days of week / 选择星期</h2>
-      <p class="help">Pick one or more days, or choose "all week". / 选择一天或多天，或选择"全周"。</p>
-      <label class="all-week-row">
-        <input type="checkbox" id="days-all-week">
-        <span>All week / 全周</span>
-      </label>
-      <div id="days-checkboxes"></div>
+<dialog class="modal" id="dates-dialog">
+  <form id="dates-form">
+    <div class="dialog-body scroll">
+      <h2>Schedule / 排期</h2>
+      <p class="help">Pick any dates across weeks. / 跨周选择任意日期。</p>
+      <div id="dates-weeks"></div>
     </div>
     <div class="dialog-actions">
-      <button type="button" id="days-clear">Clear / 清除</button>
-      <button type="button" id="days-cancel">Cancel / 取消</button>
-      <button type="submit" id="days-save" class="primary">Save / 保存</button>
+      <button type="button" id="dates-clear">Clear all / 全部清除</button>
+      <button type="button" id="dates-cancel">Cancel / 取消</button>
+      <button type="submit" id="dates-save" class="primary">Save / 保存</button>
     </div>
   </form>
 </dialog>
@@ -488,11 +523,6 @@
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const DAY_ORDER = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:7 };
-  const DAY_LABELS = {
-    Mon: 'Mon / 周一', Tue: 'Tue / 周二', Wed: 'Wed / 周三',
-    Thu: 'Thu / 周四', Fri: 'Fri / 周五', Sat: 'Sat / 周六', Sun: 'Sun / 周日'
-  };
   const FUTURE_WEEKS_IN_PICKER = 6;
 
   // --- Utility ---
@@ -680,35 +710,90 @@
     });
   }
 
-  // --- Week picker for add form ---
-  const addWeekSelect = document.getElementById('add-week');
-  function buildAddWeekOptions() {
-    const opts = [];
-    const cur = currentMonday();
-    for (let i = 0; i <= FUTURE_WEEKS_IN_PICKER; i++) {
-      const d = new Date(cur);
-      d.setDate(cur.getDate() + i * 7);
-      const key = ymd(d);
-      const label = `${weekTitle(i)} · ${fmtWeekRange(d)}`;
-      opts.push({ value: key, label });
-    }
-    addWeekSelect.innerHTML = opts.map((o, i) =>
-      `<option value="${esc(o.value)}"${i === 0 ? ' selected' : ''}>${esc(o.label)}</option>`
-    ).join('');
+  // --- Date helpers ---
+  const DAY_ZH = { Mon:'周一', Tue:'周二', Wed:'周三', Thu:'周四', Fri:'周五', Sat:'周六', Sun:'周日' };
+  function dayKeyFromDate(date) {
+    // 0=Sun..6=Sat -> Mon/Tue/.../Sun
+    return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getDay()];
   }
-  buildAddWeekOptions();
-  // Rebuild daily so labels stay accurate if page is left open across a week boundary
-  setInterval(buildAddWeekOptions, 60 * 60 * 1000);
+  function taskDates(t) {
+    if (Array.isArray(t.scheduled_dates) && t.scheduled_dates.length > 0) {
+      return [...t.scheduled_dates].sort();
+    }
+    // Legacy fallback (only used until backfill applied / for new inserts sans dates)
+    if (t.scheduled_week_start) {
+      const monday = fromYmd(t.scheduled_week_start);
+      const legacyDays = Array.isArray(t.days_of_week) && t.days_of_week.length > 0
+        ? t.days_of_week
+        : (t.day_of_week ? [t.day_of_week] : []);
+      if (legacyDays.length > 0) {
+        return legacyDays.map(d => {
+          const dt = new Date(monday);
+          dt.setDate(monday.getDate() + (({Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6})[d] || 0));
+          return ymd(dt);
+        }).sort();
+      }
+      return [t.scheduled_week_start]; // week-only fallback: pin to Monday
+    }
+    return [];
+  }
+  function datesByWeek(dates) {
+    const map = new Map();
+    for (const s of dates) {
+      const d = fromYmd(s);
+      const key = ymd(mondayOf(d));
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(s);
+    }
+    for (const arr of map.values()) arr.sort();
+    return map; // Map<weekMondayKey, ISO date strings[]>
+  }
+  function fmtDayShort(dateStr) {
+    const d = fromYmd(dateStr);
+    const dayKey = dayKeyFromDate(d);
+    return `${dayKey} ${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  function fmtDayShortZh(dateStr) {
+    const d = fromYmd(dateStr);
+    const dayKey = dayKeyFromDate(d);
+    return `${DAY_ZH[dayKey]} ${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  function datesLabel(dates) {
+    if (!dates || dates.length === 0) return 'no dates / 未指定';
+    // Detect "all week" per Monday-key
+    const byWeek = datesByWeek(dates);
+    const parts = [];
+    const partsZh = [];
+    // Iterate in chronological order of weeks
+    const weekKeys = Array.from(byWeek.keys()).sort();
+    for (const wk of weekKeys) {
+      const inWeek = byWeek.get(wk);
+      if (inWeek.length === 7) {
+        const monday = fromYmd(wk);
+        const off = weekOffset(monday);
+        // Short label
+        const short = off === 0 ? 'all this week' : off === 1 ? 'all next week'
+          : off === -1 ? 'all last week' : `all week of ${monday.getMonth()+1}/${monday.getDate()}`;
+        const shortZh = off === 0 ? '本周全周' : off === 1 ? '下周全周'
+          : off === -1 ? '上周全周' : `${monday.getMonth()+1}/${monday.getDate()} 全周`;
+        parts.push(short);
+        partsZh.push(shortZh);
+      } else {
+        parts.push(inWeek.map(fmtDayShort).join(', '));
+        partsZh.push(inWeek.map(fmtDayShortZh).join('、'));
+      }
+    }
+    return `${parts.join(' · ')} / ${partsZh.join(' · ')}`;
+  }
 
-  // --- Pending days for new task ---
-  const addDaysBtn = document.getElementById('add-days-btn');
-  let pendingNewDays = [];
-  function updateAddDaysBtn() {
-    const label = pendingNewDays.length === 0
-      ? 'no day / 未指定'
-      : daysLabel(pendingNewDays, addWeekSelect.value);
-    addDaysBtn.textContent = label;
-    addDaysBtn.classList.toggle('set', pendingNewDays.length > 0);
+  // --- Pending dates for new task ---
+  const addDatesBtn = document.getElementById('add-dates-btn');
+  let pendingNewDates = [];
+  function updateAddDatesBtn() {
+    addDatesBtn.textContent = pendingNewDates.length === 0
+      ? 'no dates / 未指定'
+      : datesLabel(pendingNewDates);
+    addDatesBtn.classList.toggle('set', pendingNewDates.length > 0);
   }
 
   // --- State ---
@@ -726,67 +811,27 @@
   }
 
   // --- Render ---
-  function taskWeekPickerHtml(t) {
-    const curKey = t.scheduled_week_start;
-    const cur = currentMonday();
-    const opts = [];
-    for (let i = 0; i <= FUTURE_WEEKS_IN_PICKER; i++) {
-      const d = new Date(cur);
-      d.setDate(cur.getDate() + i * 7);
-      const key = ymd(d);
-      opts.push({ value: key, label: `${weekTitle(i)} · ${fmtWeekRange(d)}`, offset: i });
+  function taskDatesPillHtml(datesInThisWeek, allDates) {
+    // Pill shows the dates that belong to the week context in which the task is rendered.
+    // Editing opens the dialog with the task's full set of dates (allDates).
+    const shown = datesInThisWeek && datesInThisWeek.length > 0 ? datesInThisWeek : allDates;
+    const hasAny = allDates && allDates.length > 0;
+    const cls = hasAny ? 'tag set pill-btn' : 'tag pill-btn';
+    let label;
+    if (!shown || shown.length === 0) {
+      label = 'no dates / 未指定';
+    } else if (shown.length === 7) {
+      label = 'all week / 全周';
+    } else {
+      const en = shown.map(fmtDayShort).join(', ');
+      const zh = shown.map(fmtDayShortZh).join('、');
+      label = `${en} / ${zh}`;
     }
-    // If task's current week isn't in the standard list (past or far future), include it
-    if (curKey && !opts.some(o => o.value === curKey)) {
-      const d = fromYmd(curKey);
-      const off = weekOffset(d);
-      opts.unshift({ value: curKey, label: `${weekTitle(off)} · ${fmtWeekRange(d)}`, offset: off });
-    }
-    const html = opts.map(o => {
-      const sel = o.value === curKey ? ' selected' : '';
-      return `<option value="${esc(o.value)}"${sel}>${esc(o.label)}</option>`;
-    }).join('');
-    // Non-current week is highlighted
-    const cls = (curKey && curKey !== ymd(cur)) ? 'tag set' : 'tag';
-    return `<select class="${cls}" data-week-tag aria-label="Which week / 选择周">${html}</select>`;
+    return `<button type="button" class="${cls}" data-dates-btn aria-label="Pick dates / 选择日期">${esc(label)}</button>`;
   }
 
-  function fmtMD(date) {
-    return `${date.getMonth() + 1}/${date.getDate()}`;
-  }
-  function dayOptionLabel(dayKey, weekStartKey) {
-    if (!dayKey) return 'no day / 未指定';
-    const base = DAY_LABELS[dayKey] || dayKey;
-    if (!weekStartKey) return base;
-    const monday = fromYmd(weekStartKey);
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + (DAY_ORDER[dayKey] - 1));
-    return base.replace(dayKey, `${dayKey} ${fmtMD(d)}`);
-  }
-
-  const DAY_ZH = { Mon:'周一', Tue:'周二', Wed:'周三', Thu:'周四', Fri:'周五', Sat:'周六', Sun:'周日' };
-  function taskDays(t) {
-    if (Array.isArray(t.days_of_week) && t.days_of_week.length > 0) return t.days_of_week;
-    return t.day_of_week ? [t.day_of_week] : [];
-  }
-  function daysLabel(days, weekStartKey) {
-    if (!days || days.length === 0) return 'no day / 未指定';
-    if (days.length === 7) return 'all week / 全周';
-    const sorted = [...days].sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b]);
-    if (sorted.length === 1) return dayOptionLabel(sorted[0], weekStartKey);
-    const en = sorted.join(', ');
-    const zh = sorted.map(d => DAY_ZH[d]).join('、');
-    return `${en} / ${zh}`;
-  }
-
-  function taskDaysPickerHtml(t) {
-    const days = taskDays(t);
-    const cls = days.length > 0 ? 'tag set pill-btn' : 'tag pill-btn';
-    const label = daysLabel(days, t.scheduled_week_start);
-    return `<button type="button" class="${cls}" data-days-btn aria-label="Days of week / 选择星期">${esc(label)}</button>`;
-  }
-
-  function openTaskHtml(t) {
+  function openTaskHtml(t, datesInThisWeek) {
+    const allDates = taskDates(t);
     return `
       <div class="task" data-id="${esc(t.id)}">
         <input type="checkbox" data-action="complete" aria-label="Complete task / 完成任务">
@@ -795,27 +840,20 @@
             <span class="title">${esc(t.title)}</span>
             <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task / 删除任务" title="Delete task / 删除任务">×</button>
           </div>
-          <div class="pills">${taskWeekPickerHtml(t)}${taskDaysPickerHtml(t)}</div>
+          <div class="pills">${taskDatesPillHtml(datesInThisWeek, allDates)}</div>
           <div class="meta">added by / 添加人 ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
         </div>
       </div>`;
   }
 
-  function taskWeekTagStatic(t) {
-    if (!t.scheduled_week_start) return '';
-    const d = fromYmd(t.scheduled_week_start);
-    const off = weekOffset(d);
-    const label = `${weekTitle(off)} · ${fmtWeekRange(d)}`;
-    return `<span class="tag set static">${esc(label)}</span>`;
-  }
-  function taskDaysTagStatic(t) {
-    const days = taskDays(t);
-    if (days.length === 0) return '';
-    return `<span class="tag set static">${esc(daysLabel(days, t.scheduled_week_start))}</span>`;
+  function taskDatesTagStatic(t) {
+    const dates = taskDates(t);
+    if (dates.length === 0) return '';
+    return `<span class="tag set static">${esc(datesLabel(dates))}</span>`;
   }
 
   function doneTaskHtml(t) {
-    const pills = `${taskWeekTagStatic(t)}${taskDaysTagStatic(t)}`;
+    const pill = taskDatesTagStatic(t);
     return `
       <div class="task done" data-id="${esc(t.id)}">
         <input type="checkbox" data-action="uncomplete" checked aria-label="Un-complete task / 撤销完成">
@@ -824,7 +862,7 @@
             <span class="title">${esc(t.title)}</span>
             <button type="button" class="delete-btn" data-action="delete" aria-label="Delete task / 删除任务" title="Delete task / 删除任务">×</button>
           </div>
-          ${pills ? `<div class="pills">${pills}</div>` : ''}
+          ${pill ? `<div class="pills">${pill}</div>` : ''}
           <div class="meta">added by / 添加人 ${esc(t.created_by)} · ${esc(fmtDate(t.created_at))}</div>
           <div class="meta">completed by / 完成人 ${esc(t.completed_by)} · ${esc(fmtDate(t.completed_at))}</div>
         </div>
@@ -834,32 +872,35 @@
   function render() {
     const all = Array.from(tasks.values());
     const open = all.filter(t => !t.completed_at);
-    const done = all.filter(t => t.completed_at)
-      .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+    const done = all.filter(t => t.completed_at);
 
-    // Group open by scheduled_week_start (fallback: created_at week)
-    const groups = new Map();
+    // Build open groups: a task appears once per week it has any date in.
+    // Tasks with no dates land in a "No date" bin.
+    const groups = new Map(); // weekKey -> { key, start, entries: [{task, datesInWeek}] }
+    const noDateTasks = [];
     for (const t of open) {
-      const key = t.scheduled_week_start || ymd(mondayOf(t.created_at));
-      if (!groups.has(key)) {
-        groups.set(key, { key, start: fromYmd(key), tasks: [] });
+      const dates = taskDates(t);
+      if (dates.length === 0) { noDateTasks.push(t); continue; }
+      const byWeek = datesByWeek(dates);
+      for (const [wkKey, wkDates] of byWeek) {
+        if (!groups.has(wkKey)) {
+          groups.set(wkKey, { key: wkKey, start: fromYmd(wkKey), entries: [] });
+        }
+        groups.get(wkKey).entries.push({ task: t, datesInWeek: wkDates });
       }
-      groups.get(key).tasks.push(t);
     }
 
-    // Sort tasks within each group: earliest tagged day first (Mon-Sun), unset last, then created_at desc
+    // Sort entries in a week by earliest date, then created_at desc
     for (const g of groups.values()) {
-      g.tasks.sort((a, b) => {
-        const daysA = taskDays(a);
-        const daysB = taskDays(b);
-        const da = daysA.length ? Math.min(...daysA.map(d => DAY_ORDER[d])) : 8;
-        const db = daysB.length ? Math.min(...daysB.map(d => DAY_ORDER[d])) : 8;
-        if (da !== db) return da - db;
-        return new Date(b.created_at) - new Date(a.created_at);
+      g.entries.sort((a, b) => {
+        const aMin = a.datesInWeek[0];
+        const bMin = b.datesInWeek[0];
+        if (aMin !== bMin) return aMin.localeCompare(bMin);
+        return new Date(b.task.created_at) - new Date(a.task.created_at);
       });
     }
 
-    // Sort groups: current(0), future ascending, past descending (nearest past first)
+    // Sort groups: current(0), future asc, past desc
     const sortedGroups = Array.from(groups.values()).sort((a, b) => {
       const aOff = weekOffset(a.start);
       const bOff = weekOffset(b.start);
@@ -871,7 +912,10 @@
       return 0;
     });
 
-    openList.innerHTML = sortedGroups.map(g => {
+    // No-date bin: sort by created_at desc
+    noDateTasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    let openHtml = sortedGroups.map(g => {
       const off = weekOffset(g.start);
       const title = weekTitle(off);
       const range = fmtWeekRange(g.start);
@@ -884,27 +928,35 @@
             <span>${esc(title)}</span>
             <span class="range">${esc(range)}</span>
           </h2>
-          <div class="list">${g.tasks.map(openTaskHtml).join('')}</div>
+          <div class="list">${g.entries.map(e => openTaskHtml(e.task, e.datesInWeek)).join('')}</div>
         </div>`;
     }).join('');
+    if (noDateTasks.length > 0) {
+      openHtml += `
+        <div class="week-group">
+          <h2 class="week-header"><span>No date / 未指定</span></h2>
+          <div class="list">${noDateTasks.map(t => openTaskHtml(t, [])).join('')}</div>
+        </div>`;
+    }
+    openList.innerHTML = openHtml;
     openEmpty.hidden = open.length > 0;
 
-    // Group completed tasks by week (scheduled_week_start, fallback to completed_at week)
+    // Group completed tasks by their completion week (a task completed once appears once)
     const doneGroups = new Map();
     for (const t of done) {
-      const key = t.scheduled_week_start || ymd(mondayOf(t.completed_at));
+      const dates = taskDates(t);
+      const key = dates.length > 0
+        ? ymd(mondayOf(fromYmd(dates[0])))
+        : ymd(mondayOf(t.completed_at));
       if (!doneGroups.has(key)) {
         doneGroups.set(key, { key, start: fromYmd(key), tasks: [] });
       }
       doneGroups.get(key).tasks.push(t);
     }
-    // Within a week, sort by completed_at desc (most recent first)
     for (const g of doneGroups.values()) {
       g.tasks.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
     }
-    // Sort groups: most recent week first (highest week key)
     const sortedDoneGroups = Array.from(doneGroups.values()).sort((a, b) => b.start - a.start);
-
     completedList.innerHTML = sortedDoneGroups.map(g => {
       const off = weekOffset(g.start);
       const title = weekTitle(off);
@@ -922,6 +974,9 @@
     completedCount.textContent = done.length;
   }
 
+  // Refresh labels ("this week" vs "last week") if the page is left open across midnight
+  setInterval(render, 60 * 60 * 1000);
+
   // --- Actions ---
   document.getElementById('add-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -931,20 +986,18 @@
     if (!title) return;
 
     const name = await ensureName();
-    const week = addWeekSelect.value;
-    const days = pendingNewDays.length > 0 ? [...pendingNewDays] : null;
+    const dates = pendingNewDates.length > 0 ? [...pendingNewDates].sort() : null;
     btn.disabled = true;
     try {
-      const payload = { title, created_by: name, scheduled_week_start: week };
-      if (days) payload.days_of_week = days;
+      const payload = { title, created_by: name };
+      if (dates) payload.scheduled_dates = dates;
       const { data, error } = await client.from('tasks')
         .insert(payload).select().single();
       if (error) throw error;
       tasks.set(data.id, data);
       input.value = '';
-      pendingNewDays = [];
-      buildAddWeekOptions(); // resets to "This week"
-      updateAddDaysBtn();
+      pendingNewDates = [];
+      updateAddDatesBtn();
       render();
       input.focus();
     } catch (err) {
@@ -960,23 +1013,6 @@
     const taskEl = target.closest('.task');
     if (!taskEl) return;
     const id = taskEl.dataset.id;
-
-    // Week picker
-    if (target.matches('[data-week-tag]')) {
-      const value = target.value;
-      target.disabled = true;
-      try {
-        const { data, error } = await client.from('tasks')
-          .update({ scheduled_week_start: value }).eq('id', id).select().single();
-        if (error) throw error;
-        tasks.set(data.id, data);
-        render();
-      } catch (err) {
-        window.alert('Could not move task / 无法移动任务: ' + (err.message || err));
-        target.disabled = false;
-      }
-      return;
-    }
 
     // Checkbox complete/uncomplete
     if (target instanceof HTMLInputElement && target.type === 'checkbox') {
@@ -1001,103 +1037,163 @@
     }
   });
 
-  // --- Days-of-week dialog ---
-  const daysDialog = document.getElementById('days-dialog');
-  const daysCheckboxes = document.getElementById('days-checkboxes');
-  const daysAllWeek = document.getElementById('days-all-week');
-  const daysClear = document.getElementById('days-clear');
-  const daysCancel = document.getElementById('days-cancel');
-  const daysSave = document.getElementById('days-save');
-  const daysForm = document.getElementById('days-form');
-  let daysEditingId = null;
+  // --- Dates dialog (multi-week) ---
+  const datesDialog = document.getElementById('dates-dialog');
+  const datesWeeksEl = document.getElementById('dates-weeks');
+  const datesClear = document.getElementById('dates-clear');
+  const datesCancel = document.getElementById('dates-cancel');
+  const datesSave = document.getElementById('dates-save');
+  const datesForm = document.getElementById('dates-form');
+  let datesEditingId = null;
 
-  function buildDaysCheckboxes(weekStartKey) {
-    daysCheckboxes.innerHTML = DAYS.map(d => {
-      const label = dayOptionLabel(d, weekStartKey);
-      return `<label><input type="checkbox" name="day" value="${d}"><span>${esc(label)}</span></label>`;
+  function buildDatesWeeks(selectedSet) {
+    // Weeks shown: current + FUTURE_WEEKS_IN_PICKER, plus any week (past or far future)
+    // that contains a selected date so users can uncheck it.
+    const weekKeys = new Set();
+    const cur = currentMonday();
+    for (let i = 0; i <= FUTURE_WEEKS_IN_PICKER; i++) {
+      const d = new Date(cur);
+      d.setDate(cur.getDate() + i * 7);
+      weekKeys.add(ymd(d));
+    }
+    for (const dateStr of selectedSet) {
+      const wk = ymd(mondayOf(fromYmd(dateStr)));
+      weekKeys.add(wk);
+    }
+    // Sort weeks chronologically (past first, current, then future)
+    const sorted = Array.from(weekKeys).sort();
+
+    datesWeeksEl.innerHTML = sorted.map(wkKey => {
+      const monday = fromYmd(wkKey);
+      const off = weekOffset(monday);
+      const title = weekTitle(off);
+      const range = fmtWeekRange(monday);
+      const isCurrent = off === 0;
+      const daysHtml = DAYS.map((dk, idx) => {
+        const dt = new Date(monday);
+        dt.setDate(monday.getDate() + idx);
+        const isoDate = ymd(dt);
+        const checked = selectedSet.has(isoDate);
+        return `
+          <label class="${checked ? 'checked' : ''}">
+            <input type="checkbox" name="date" value="${esc(isoDate)}"${checked ? ' checked' : ''}>
+            <span>${esc(dk)} ${dt.getMonth() + 1}/${dt.getDate()}</span>
+          </label>`;
+      }).join('');
+      const allChecked = DAYS.every((_, idx) => {
+        const dt = new Date(monday);
+        dt.setDate(monday.getDate() + idx);
+        return selectedSet.has(ymd(dt));
+      });
+      return `
+        <div class="week-block${isCurrent ? ' current' : ''}" data-week="${esc(wkKey)}">
+          <div class="week-block-head">
+            <label>
+              <input type="checkbox" data-all-week${allChecked ? ' checked' : ''}>
+              <span class="title">${esc(title)}</span>
+              <span class="range">${esc(range)}</span>
+            </label>
+          </div>
+          <div class="days-grid">${daysHtml}</div>
+        </div>`;
     }).join('');
   }
-  function openDaysDialog(taskId) {
-    let weekKey;
-    let current;
+
+  function openDatesDialog(taskId) {
+    let selectedSet;
     if (taskId === null) {
-      // New-task mode: use add form's selected week and pending days
-      daysEditingId = null;
-      weekKey = addWeekSelect.value;
-      current = new Set(pendingNewDays);
+      datesEditingId = null;
+      selectedSet = new Set(pendingNewDates);
     } else {
       const t = tasks.get(taskId);
       if (!t) return;
-      daysEditingId = taskId;
-      weekKey = t.scheduled_week_start;
-      current = new Set(taskDays(t));
+      datesEditingId = taskId;
+      selectedSet = new Set(taskDates(t));
     }
-    buildDaysCheckboxes(weekKey);
-    daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => {
-      cb.checked = current.has(cb.value);
-    });
-    daysAllWeek.checked = current.size === 7;
-    daysDialog.showModal();
+    buildDatesWeeks(selectedSet);
+    datesDialog.showModal();
   }
-  daysAllWeek.addEventListener('change', () => {
-    const check = daysAllWeek.checked;
-    daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = check; });
-  });
-  daysCheckboxes.addEventListener('change', () => {
-    const boxes = daysCheckboxes.querySelectorAll('input[type=checkbox]');
-    daysAllWeek.checked = Array.from(boxes).every(cb => cb.checked);
-  });
-  daysClear.addEventListener('click', () => {
-    daysCheckboxes.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; });
-    daysAllWeek.checked = false;
-  });
-  daysCancel.addEventListener('click', () => { daysDialog.close(); daysEditingId = null; });
-  daysForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const selected = Array.from(daysCheckboxes.querySelectorAll('input[type=checkbox]:checked'))
-      .map(cb => cb.value)
-      .sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b]);
 
-    // New-task mode: just stash locally
-    if (daysEditingId === null) {
-      pendingNewDays = selected;
-      updateAddDaysBtn();
-      daysDialog.close();
+  // Toggle whole-week and reflect check state in labels
+  datesWeeksEl.addEventListener('change', (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    const block = target.closest('.week-block');
+    if (!block) return;
+    const dayBoxes = block.querySelectorAll('.days-grid input[type=checkbox]');
+    if (target.hasAttribute('data-all-week')) {
+      const check = target.checked;
+      dayBoxes.forEach(cb => {
+        cb.checked = check;
+        const lbl = cb.closest('label');
+        if (lbl) lbl.classList.toggle('checked', check);
+      });
+    } else {
+      const lbl = target.closest('label');
+      if (lbl) lbl.classList.toggle('checked', target.checked);
+      const allWeek = block.querySelector('[data-all-week]');
+      if (allWeek) allWeek.checked = Array.from(dayBoxes).every(cb => cb.checked);
+    }
+  });
+
+  datesClear.addEventListener('click', () => {
+    datesWeeksEl.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.checked = false;
+      const lbl = cb.closest('label');
+      if (lbl) lbl.classList.remove('checked');
+    });
+  });
+  datesCancel.addEventListener('click', () => { datesDialog.close(); datesEditingId = null; });
+  datesForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const selected = Array.from(datesWeeksEl.querySelectorAll('input[name="date"]:checked'))
+      .map(cb => cb.value)
+      .sort();
+
+    if (datesEditingId === null) {
+      // New-task pending
+      pendingNewDates = selected;
+      updateAddDatesBtn();
+      datesDialog.close();
       return;
     }
 
-    const id = daysEditingId;
-    daysSave.disabled = true;
+    const id = datesEditingId;
+    datesSave.disabled = true;
     try {
+      // Also clear legacy fields so scheduled_dates becomes the sole source of truth
+      const patch = {
+        scheduled_dates: selected,
+        scheduled_week_start: null,
+        days_of_week: null,
+        day_of_week: null,
+      };
       const { data, error } = await client.from('tasks')
-        .update({ days_of_week: selected }).eq('id', id).select().single();
+        .update(patch).eq('id', id).select().single();
       if (error) throw error;
       tasks.set(data.id, data);
       render();
-      daysDialog.close();
-      daysEditingId = null;
+      datesDialog.close();
+      datesEditingId = null;
     } catch (err) {
-      window.alert('Could not update days / 无法更新星期: ' + (err.message || err));
+      window.alert('Could not update dates / 无法更新日期: ' + (err.message || err));
     } finally {
-      daysSave.disabled = false;
+      datesSave.disabled = false;
     }
   });
 
-  // Open days dialog when the days pill is clicked (task) or the add-form button
+  // Open dates dialog when the pill or add-form dates button is clicked
   document.addEventListener('click', (e) => {
-    if (e.target.closest && e.target.closest('#add-days-btn')) {
-      openDaysDialog(null);
+    if (e.target.closest && e.target.closest('#add-dates-btn')) {
+      openDatesDialog(null);
       return;
     }
-    const btn = e.target.closest && e.target.closest('[data-days-btn]');
+    const btn = e.target.closest && e.target.closest('[data-dates-btn]');
     if (!btn) return;
     const taskEl = btn.closest('.task');
     if (!taskEl) return;
-    openDaysDialog(taskEl.dataset.id);
+    openDatesDialog(taskEl.dataset.id);
   });
-
-  // Re-render add-days button label when the week changes (day dates depend on week)
-  addWeekSelect.addEventListener('change', updateAddDaysBtn);
 
   // Delete via click on × button
   document.addEventListener('click', async (e) => {
